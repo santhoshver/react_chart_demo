@@ -1,6 +1,6 @@
 import React from 'react';
 import axios from 'axios';
-import PieChart from 'highcharts-react-official';
+import HighChart from 'highcharts-react-official';
 import Highcharts from 'highcharts';
 import { INVOICE_URL } from './invoice.constants';
 
@@ -10,15 +10,14 @@ export default class InvoiceChartComponent extends React.Component {
 
         this.state = {
             invoiceData: [],
-            options: {
+            generalOptions: {
                 title: {
-                    text: 'Sales Statistics'
+                    text: 'Sales Report'
                 },
 
                 xAxis: {
-                    categories: [],
                     title: {
-                        text: 'Month'
+                        text: 'Customers'
                     }
                 },
                 yAxis: {
@@ -28,12 +27,14 @@ export default class InvoiceChartComponent extends React.Component {
                 },
                 series: [
                     {   name: 'Sales',
-                        type: "column",
                         data: []
                     }
                 ]
-            }
+            },
+            barChartOptions: {},
+            pieChartOptions: {}
         };
+        this.buildChart = this.buildChart.bind(this);
     }
 
     componentDidMount() {
@@ -44,34 +45,42 @@ export default class InvoiceChartComponent extends React.Component {
         axios.get(INVOICE_URL.GET_INVOICES)
             .then(res => {
                 res.data.map((item) => {
-                    item['y'] = item.sales;
-                    // item['x'] = item.income;
-                    item['name'] = item.month
+                    item['y'] = item.salesTotal;
+                    item['name'] = item.customerName
                     return item;
                 });
-                this.setState(prevState => ({
-                    options: {
-                        title: prevState.options.title,
-                        xAxis: {
-                            categories: res.data.map(item => item.month)
-                        },
-                        series: [{
-                            data: res.data,
-                            type: prevState.options.series[0].type
-                        }]
-                    }
-                }));
-
-                console.log(this.state);
+                this.setState({
+                    barChartOptions: this.buildChart('bar', res.data),
+                    pieChartOptions: this.buildChart('pie', res.data)
+                });
             });
+    }
+
+    buildChart(type, data) {
+        console.log(this);
+        return {
+            title: this.state.generalOptions.title,
+            xAxis: {
+                categories: data.map(item => item.customerName)
+            },
+            series: [{
+                data: data,
+                type: type
+            }]
+        }
     }
 
     render() {
         return (
             <div>
-                <PieChart
+                <HighChart
                     highcharts={Highcharts}
-                    options={this.state.options}
+                    options={this.state.barChartOptions}
+                />
+
+                <HighChart
+                    highcharts={Highcharts}
+                    options={this.state.pieChartOptions}
                 />
             </div>
         );
